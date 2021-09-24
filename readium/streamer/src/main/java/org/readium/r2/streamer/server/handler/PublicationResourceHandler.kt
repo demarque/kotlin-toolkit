@@ -24,6 +24,7 @@ import org.readium.r2.shared.util.mediatype.MediaType
 import org.readium.r2.streamer.BuildConfig.DEBUG
 import org.readium.r2.streamer.server.ServingFetcher
 import timber.log.Timber
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 
 
@@ -131,7 +132,9 @@ class PublicationResourceHandler : RouterNanoHTTPD.DefaultHandler() {
                         resource.close()
                     }
             else {
-                createResponse(Status.OK, mimeType, ResourceInputStream(resource), dataLength)
+                // FIXME: De Marque: We can't use the ResourceInputStream because NetGalley's LCPDFs are using deflate instead of stored for the PDF file, which produces very bad performances with random access
+                createResponse(Status.OK, mimeType, ByteArrayInputStream(resource.read().getOrThrow()), dataLength)
+//                createResponse(Status.OK, mimeType, ResourceInputStream(resource), dataLength)
                     .apply {
                         addHeader("ETag", etag)
                     }

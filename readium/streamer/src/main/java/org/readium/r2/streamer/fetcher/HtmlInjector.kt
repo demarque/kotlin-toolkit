@@ -98,7 +98,7 @@ internal class HtmlInjector(
             resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, element).toString()
             endHeadIndex += element.length
         }
-        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "OpenDyslexic", href = "/assets/fonts/OpenDyslexic-Regular.otf")).toString()
+        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont()).toString()
         resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, "<style>@import url('https://fonts.googleapis.com/css?family=PT+Serif|Roboto|Source+Sans+Pro|Vollkorn');</style>\n").toString()
 
         // Disable the text selection if the publication is protected.
@@ -178,11 +178,16 @@ internal class HtmlInjector(
         return resourceHtml
     }
 
-    private fun getHtmlFont(fontFamily: String, href: String): String {
-        val prefix = "<style type=\"text/css\"> @font-face{font-family: \"$fontFamily\"; src:url(\""
-        val suffix = "\") format('truetype');}</style>\n"
-        return prefix + href + suffix
-    }
+    private fun getHtmlFont(): String =
+        """
+        <style type="text/css">
+            @font-face{font-family: "OpenDyslexic"; src: url("/assets/fonts/OpenDyslexic-Regular.otf") format("opentype");}
+            @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-Regular.ttf") format("opentype");}
+            @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-Italic.ttf") format("opentype"); font-weight: normal; font-style: italic;}
+            @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-Bold.ttf") format("opentype"); font-weight: bold; font-style: normal;}
+            @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-BoldItalic.ttf") format("opentype"); font-weight: bold; font-style: italic;}
+        </style>
+        """
 
     private fun getHtmlLink(resourceName: String): String {
         val prefix = "<link rel=\"stylesheet\" type=\"text/css\" href=\""
