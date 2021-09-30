@@ -47,6 +47,7 @@ import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.isRestricted
 import org.readium.r2.shared.publication.services.positions
+import org.readium.r2.shared.publication.services.positionsByReadingOrder
 import kotlin.math.ceil
 import kotlin.reflect.KClass
 
@@ -96,6 +97,7 @@ class EpubNavigatorFragment private constructor(
         EpubNavigatorViewModel.createFactory(config.decorationTemplates.copy())
     }
 
+    internal lateinit var positionsByReadingOrder: List<List<Locator>>
     internal lateinit var positions: List<Locator>
     lateinit var resourcePager: R2ViewPager
 
@@ -126,17 +128,19 @@ class EpubNavigatorFragment private constructor(
         _binding = ActivityR2ViewpagerBinding.inflate(inflater, container, false)
         val view = binding.root
 
-        positions = runBlocking { publication.positions() }
+        positionsByReadingOrder = runBlocking { publication.positionsByReadingOrder() }
+        positions = positionsByReadingOrder.flatten()
         publicationIdentifier = publication.metadata.identifier ?: publication.metadata.title
 
         resourcePager = binding.resourcePager
         resourcePager.type = Publication.TYPE.EPUB
 
         if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
-            resourcesSingle = publication.readingOrder.map { link ->
+            resourcesSingle = publication.readingOrder.mapIndexed { index, link ->
                 PageResource.EpubReflowable(
                     link = link,
-                    url = link.withBaseUrl(baseUrl).href
+                    url = link.withBaseUrl(baseUrl).href,
+                    positionCount = positionsByReadingOrder.getOrNull(index)?.size ?: 0
                 )
             }
 
@@ -387,6 +391,7 @@ class EpubNavigatorFragment private constructor(
     override fun onPageLoaded() {
         r2Activity?.onPageLoaded()
         paginationListener?.onPageLoaded()
+        notifyCurrentLocation()
     }
 
     override fun onPageChanged(pageIndex: Int, totalPages: Int, url: String) {
@@ -564,6 +569,10 @@ class EpubNavigatorFragment private constructor(
         debounceLocationNotificationJob?.cancel()
         debounceLocationNotificationJob = launch {
             delay(100L)
+
+            if (pendingLocator != null) {
+                return@launch
+            }
 
             // The transition has stabilized, so we can ask the web view to refresh its current
             // item to reflect the current scroll position.

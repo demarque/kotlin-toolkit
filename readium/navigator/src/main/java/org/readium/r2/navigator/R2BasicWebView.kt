@@ -67,7 +67,15 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         val selectionActionModeCallback: ActionMode.Callback? get() = null
     }
 
+    internal interface InternalListener {
+        /**
+         * Called when the resource is first laid out or resized.
+         */
+        fun onPageLayout() {}
+    }
+
     lateinit var listener: Listener
+    internal var internalListener: InternalListener? = null
     lateinit var navigator: Navigator
     internal var preferences: SharedPreferences? = null
 
@@ -206,6 +214,13 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         }
     }
 
+    /**
+     * Called from the JS code when the resource is laid out / resized.
+     */
+    @android.webkit.JavascriptInterface
+    fun onPageLayout() {
+        internalListener?.onPageLayout()
+    }
 
     /**
      * Called from the JS code when a tap is detected.
@@ -416,10 +431,7 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
     }
 
     fun setProperty(key: String, value: String) {
-        runJavaScript("readium.setProperty(\"$key\", \"$value\");") {
-            // Used to redraw highlights when user settings changed.
-            listener.onPageLoaded()
-        }
+        runJavaScript("readium.setProperty(\"$key\", \"$value\");")
     }
 
     fun removeProperty(key: String) {
