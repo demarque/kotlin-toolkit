@@ -75,8 +75,8 @@ class R2EpubPageFragment : Fragment() {
         this.webView = webView
 
         webView.visibility = View.INVISIBLE
-        webView.navigator = parentFragment as Navigator
-        webView.listener = parentFragment as R2BasicWebView.Listener
+        webView.navigator = navigatorFragment
+        webView.listener = navigatorFragment.webViewListener
         webView.internalListener = WebViewListener()
         webView.preferences = preferences
 
