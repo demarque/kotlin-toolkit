@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file. Take a look
 #### Fixed
 
 * `EpubNavigatorFragment`'s `goForward()` and `goBackward()` are now jumping to the previous or next pages instead of resources.
+* Fixed turning pages of an EPUB reflowable resource with an odd number of columns. A virtual blank trailing column is appended to the resource when displayed as two columns.
 
 
 ## [2.1.0]
