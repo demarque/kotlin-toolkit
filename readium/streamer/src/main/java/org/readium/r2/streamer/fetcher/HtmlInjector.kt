@@ -310,6 +310,11 @@ internal class HtmlInjector(
     private fun buildStringProperties(list: MutableMap<String, String>): String {
         var string = ""
         for (property in list) {
+            // START Aldiko
+            if (property.value.isBlank()) {
+                continue
+            }
+            // END Aldiko
             string = string + " " + property.key + ": " + property.value + ";"
         }
         return string

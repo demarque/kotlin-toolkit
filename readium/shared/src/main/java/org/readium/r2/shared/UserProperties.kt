@@ -81,3 +81,12 @@ class UserProperties : Serializable {
         it.ref == ref
     }!! as T
 }
+
+
+// START Aldiko
+
+class StringProperty(var value: String?, ref: String, name: String) : UserProperty(ref, name) {
+    override fun toString() = value ?: ""
+}
+
+// END Aldiko
