@@ -21,7 +21,6 @@ window.addEventListener(
   function () {
     const observer = new ResizeObserver(() => {
       appendVirtualColumnIfNeeded();
-      requestAnimationFrame(() => Android.onPageLayout());
     });
     observer.observe(document.body);
 
