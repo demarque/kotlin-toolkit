@@ -101,6 +101,10 @@ internal class HtmlInjector(
         resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont()).toString()
         resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, "<style>@import url('https://fonts.googleapis.com/css?family=PT+Serif|Roboto|Source+Sans+Pro|Vollkorn');</style>\n").toString()
 
+        // START Aldiko
+        if (false) {
+        // END Aldiko
+
         // Disable the text selection if the publication is protected.
         // FIXME: This is a hack until proper LCP copy is implemented, see https://github.com/readium/r2-testapp-kotlin/issues/266
         if (publication.isProtected) {
@@ -113,6 +117,11 @@ internal class HtmlInjector(
                 </style>
             """).toString()
         }
+
+        // START Aldiko
+        }
+        // END Aldiko
+
 
         // Inject userProperties
         getProperties(publication.userSettingsUIPreset)?.let { propertyPair ->
