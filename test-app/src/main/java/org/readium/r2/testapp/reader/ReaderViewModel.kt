@@ -17,8 +17,12 @@ import androidx.paging.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.ExperimentalDecorator
+import org.readium.r2.navigator.ExperimentalPresentation
+import org.readium.r2.navigator.Navigator
+import org.readium.r2.navigator.presentation.PresentationController
 import org.readium.r2.shared.Search
 import org.readium.r2.shared.UserException
 import org.readium.r2.shared.publication.Locator
@@ -35,21 +39,30 @@ import org.readium.r2.testapp.domain.model.Highlight
 import org.readium.r2.testapp.search.SearchPagingSource
 import org.readium.r2.testapp.utils.EventChannel
 
-@OptIn(Search::class, ExperimentalDecorator::class)
+@OptIn(Search::class, ExperimentalDecorator::class, ExperimentalPresentation::class)
 class ReaderViewModel(context: Context, arguments: ReaderContract.Input) : ViewModel() {
+
+    private val repository = BookRepository(BookDatabase.getDatabase(context).booksDao())
 
     val publication: Publication = arguments.publication
     val initialLocation: Locator? = arguments.initialLocator
     val channel = EventChannel(Channel<Event>(Channel.BUFFERED), viewModelScope)
     val fragmentChannel = EventChannel(Channel<FeedbackEvent>(Channel.BUFFERED), viewModelScope)
     val bookId = arguments.bookId
-    private val repository: BookRepository
-
+    val book = runBlocking { repository.get(bookId) }
     val publicationId: PublicationId get() = bookId.toString()
+    val presentation = PresentationController(settings = book?.userSettings, coroutineScope = viewModelScope)
 
     init {
-        val booksDao = BookDatabase.getDatabase(context).booksDao()
-        repository = BookRepository(booksDao)
+        viewModelScope.launch {
+            presentation.settings.collect {
+                repository.saveUserSettings(bookId, it.userSettings)
+            }
+        }
+    }
+
+    fun onNavigatorCreated(navigator: Navigator) {
+        presentation.attach(navigator)
     }
 
     fun saveProgression(locator: Locator) = viewModelScope.launch {
@@ -213,7 +226,7 @@ class ReaderViewModel(context: Context, arguments: ReaderContract.Input) : ViewM
     class Factory(private val context: Context, private val arguments: ReaderContract.Input)
         : ViewModelProvider.NewInstanceFactory() {
 
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T =
+        override fun <T : ViewModel> create(modelClass: Class<T>): T =
             modelClass.getDeclaredConstructor(Context::class.java, ReaderContract.Input::class.java)
                 .newInstance(context.applicationContext, arguments)
     }
