@@ -93,7 +93,16 @@ interface Navigator {
     @ExperimentalPresentation
     suspend fun applySettings(settings: PresentationSettings) {}
 
-    interface Listener
+    interface Listener {
+
+        /**
+         * Called when the navigator will interrupt the linear reading progression to jump to the
+         * given locator.
+         *
+         * This occurs for example when clicking on internal links or calling [go] programmatically.
+         */
+        fun onJumpToLocator(locator: Locator) {}
+    }
 
     @Deprecated("Use [currentLocator.value] instead", ReplaceWith("currentLocator.value"))
     val currentLocation: Locator? get() = currentLocator.value
@@ -215,4 +224,6 @@ interface MediaNavigator : Navigator {
      * Seeks relatively from the current position in the current resource.
      */
     fun seekRelative(offset: Duration)
+
+    interface Listener : Navigator.Listener
 }
