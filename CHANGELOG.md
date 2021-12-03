@@ -34,6 +34,8 @@ All notable changes to this project will be documented in this file. Take a look
 #### Navigator
 
 * Fixed turning pages of an EPUB reflowable resource with an odd number of columns. A virtual blank trailing column is appended to the resource when displayed as two columns.
+* EPUB: Fallback on `reflowable` if the `presentation.layout` hint is missing from a manifest.
+* EPUB: Offset of the current selection's `rect` to take into account the vertical padding.
 
 
 ## [2.1.1]
