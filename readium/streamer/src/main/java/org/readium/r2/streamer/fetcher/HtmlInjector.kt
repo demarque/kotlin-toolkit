@@ -193,6 +193,10 @@ internal class HtmlInjector(
             @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-Italic.ttf") format("opentype"); font-weight: normal; font-style: italic;}
             @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-Bold.ttf") format("opentype"); font-weight: bold; font-style: normal;}
             @font-face{font-family: "Literata"; src: url("/assets/fonts/Literata-BoldItalic.ttf") format("opentype"); font-weight: bold; font-style: italic;}
+            @font-face{font-family: "Atkinson Hyperlegible"; src: url("/assets/fonts/AtkinsonHyperlegible-Regular.ttf") format("opentype");}
+            @font-face{font-family: "Atkinson Hyperlegible"; src: url("/assets/fonts/AtkinsonHyperlegible-Italic.ttf") format("opentype"); font-weight: normal; font-style: italic;}
+            @font-face{font-family: "Atkinson Hyperlegible"; src: url("/assets/fonts/AtkinsonHyperlegible-Bold.ttf") format("opentype"); font-weight: bold; font-style: normal;}
+            @font-face{font-family: "Atkinson Hyperlegible"; src: url("/assets/fonts/AtkinsonHyperlegible-BoldItalic.ttf") format("opentype"); font-weight: bold; font-style: italic;}
         </style>
         """
 
