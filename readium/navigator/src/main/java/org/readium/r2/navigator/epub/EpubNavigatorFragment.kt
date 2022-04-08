@@ -31,7 +31,6 @@ import org.json.JSONObject
 import org.readium.r2.navigator.*
 import org.readium.r2.navigator.databinding.ActivityR2ViewpagerBinding
 import org.readium.r2.navigator.epub.EpubNavigatorViewModel.RunScriptCommand
-import org.readium.r2.navigator.extensions.htmlId
 import org.readium.r2.navigator.extensions.optRectF
 import org.readium.r2.navigator.extensions.positionsByResource
 import org.readium.r2.navigator.extensions.withBaseUrl
@@ -46,12 +45,16 @@ import org.readium.r2.shared.InternalReadiumApi
 import org.readium.r2.shared.SCROLL_REF
 import org.readium.r2.shared.extensions.addPrefix
 import org.readium.r2.shared.extensions.tryOrLog
-import org.readium.r2.shared.publication.*
+import org.readium.r2.shared.publication.Link
+import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.publication.Publication
+import org.readium.r2.shared.publication.ReadingProgression
 import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.isRestricted
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
 import org.readium.r2.shared.util.launchWebBrowser
+import org.readium.r2.shared.util.mediatype.MediaType
 import kotlin.math.ceil
 import kotlin.reflect.KClass
 
@@ -291,20 +294,14 @@ class EpubNavigatorFragment private constructor(
             val (index, resource) = page
 
             if (resourcePager.currentItem != index) {
+                pendingLocator = locator
                 resourcePager.currentItem = index
             } else if (resource is PageResource.EpubReflowable) {
-                var url = resource.url
-                locator.locations.htmlId?.let { htmlId ->
-                    url += htmlId.addPrefix("#")
-                }
-                currentFragment?.webView?.loadUrl(url)
+                currentFragment?.loadLocator(locator)
             }
         }
 
-        resourcePager.adapter = adapter
-
         if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
-            pendingLocator = locator
             setCurrent(resourcesSingle)
         } else {
 
@@ -642,6 +639,18 @@ class EpubNavigatorFragment private constructor(
     private val _currentLocator = MutableStateFlow(initialLocator
         ?: requireNotNull(publication.locatorFromLink(publication.readingOrder.first()))
     )
+
+    @InternalReadiumApi
+    suspend fun firstVisibleElementLocator(): Locator? {
+        if (!::resourcePager.isInitialized) return null
+
+        val resource = publication.readingOrder[resourcePager.currentItem]
+        return currentFragment?.webView?.findFirstVisibleLocator()
+            ?.copy(
+                href = resource.href,
+                type = resource.type ?: MediaType.XHTML.toString()
+            )
+    }
 
     /**
      * While scrolling we receive a lot of new current locations, so we use a coroutine job to
