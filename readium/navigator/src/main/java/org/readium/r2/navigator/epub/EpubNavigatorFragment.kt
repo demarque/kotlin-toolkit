@@ -301,6 +301,9 @@ class EpubNavigatorFragment private constructor(
             }
         }
 
+        // This is necessary to jump to the locator for a web view that is already loaded.
+        resourcePager.adapter = adapter
+
         if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
             setCurrent(resourcesSingle)
         } else {
