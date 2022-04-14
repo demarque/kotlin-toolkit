@@ -26,3 +26,11 @@ annotation class ExperimentalAudiobook
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.TYPEALIAS, AnnotationTarget.PROPERTY)
 annotation class ExperimentalPresentation
+
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "The new dragging gesture is still experimental. The API may be changed in the future without notice."
+)
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.TYPEALIAS, AnnotationTarget.PROPERTY)
+annotation class ExperimentalDragGesture
