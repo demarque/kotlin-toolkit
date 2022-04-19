@@ -296,13 +296,12 @@ class EpubNavigatorFragment private constructor(
             if (resourcePager.currentItem != index) {
                 pendingLocator = locator
                 resourcePager.currentItem = index
-            } else if (resource is PageResource.EpubReflowable) {
+            }
+
+            if (resource is PageResource.EpubReflowable) {
                 currentFragment?.loadLocator(locator)
             }
         }
-
-        // This is necessary to jump to the locator for a web view that is already loaded.
-        resourcePager.adapter = adapter
 
         if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
             setCurrent(resourcesSingle)
