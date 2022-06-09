@@ -16,6 +16,7 @@ import android.view.ActionMode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.collection.forEach
@@ -52,23 +53,34 @@ import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.isRestricted
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
 import org.readium.r2.shared.util.launchWebBrowser
+import org.readium.r2.shared.util.mediatype.MediaType
 import kotlin.math.ceil
 import kotlin.reflect.KClass
+
+/**
+ * Factory for a [JavascriptInterface] which will be injected in the web views.
+ *
+ * Return `null` if you don't want to inject the interface for the given [resource].
+ */
+typealias JavascriptInterfaceFactory = (resource: Link) -> Any?
 
 /**
  * Navigator for EPUB publications.
  *
  * To use this [Fragment], create a factory with `EpubNavigatorFragment.createFactory()`.
  */
-@OptIn(ExperimentalCoroutinesApi::class, ExperimentalDecorator::class)
+@OptIn(ExperimentalCoroutinesApi::class, ExperimentalDecorator::class, InternalReadiumApi::class)
 class EpubNavigatorFragment private constructor(
     override val publication: Publication,
     private val baseUrl: String,
     private val initialLocator: Locator?,
     internal val listener: Listener?,
     internal val paginationListener: PaginationListener?,
-    internal val config: Configuration,
+    config: Configuration,
 ): Fragment(), CoroutineScope by MainScope(), VisualNavigator, SelectableNavigator, DecorableNavigator {
+
+    // Make a copy to prevent the user from modifying the configuration after initialization.
+    internal val config: Configuration = config.copy()
 
     data class Configuration(
         /**
@@ -87,7 +99,19 @@ class EpubNavigatorFragment private constructor(
          * Whether padding accounting for display cutouts should be applied.
          */
         val shouldApplyInsetsPadding: Boolean? = true,
-    )
+
+        internal val javascriptInterfaces: MutableMap<String, JavascriptInterfaceFactory> = mutableMapOf()
+    ) {
+        /**
+         * Registers a new factory for the [JavascriptInterface] named [name].
+         *
+         * Return `null` in [factory] to prevent adding the Javascript interface for a given
+         * resource.
+         */
+        fun registerJavascriptInterface(name: String, factory: JavascriptInterfaceFactory) {
+            javascriptInterfaces[name] = factory
+        }
+    }
 
     interface PaginationListener {
         fun onPageChanged(pageIndex: Int, totalPages: Int, locator: Locator) {}
@@ -98,6 +122,16 @@ class EpubNavigatorFragment private constructor(
 
     init {
         require(!publication.isRestricted) { "The provided publication is restricted. Check that any DRM was properly unlocked using a Content Protection."}
+    }
+
+    /**
+     * Evaluates the given JavaScript on the currently visible HTML resource.
+     */
+    suspend fun evaluateJavascript(script: String): String? {
+        val page = currentFragment ?: return null
+        page.awaitLoaded()
+        val webView = page.webView ?: return null
+        return webView.runJavaScriptSuspend(script)
     }
 
     private val viewModel: EpubNavigatorViewModel by viewModels {
@@ -308,7 +342,7 @@ class EpubNavigatorFragment private constructor(
 
         resourcePager.adapter = adapter
 
-        if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
+        if (publication.metadata.presentation.layout != EpubLayout.FIXED) {
             pendingLocator = locator
             setCurrent(resourcesSingle)
         } else {
@@ -442,6 +476,9 @@ class EpubNavigatorFragment private constructor(
             r2Activity?.onPageEnded(end)
         }
 
+        override fun javascriptInterfacesForResource(link: Link): Map<String, Any?> =
+            config.javascriptInterfaces.mapValues { (_, factory) -> factory(link) }
+
         @Suppress("DEPRECATION")
         override fun onScroll() {
             val activity = r2Activity ?: return
@@ -526,7 +563,6 @@ class EpubNavigatorFragment private constructor(
             return true
         }
 
-        @OptIn(InternalReadiumApi::class)
         private fun openExternalLink(url: Uri) {
             val context = context ?: return
             launchWebBrowser(context, url)
@@ -697,27 +733,30 @@ class EpubNavigatorFragment private constructor(
 
             val resource = publication.readingOrder[resourcePager.currentItem]
             val progression = webView.progression.coerceIn(0.0, 1.0)
-            val positions = publication.positionsByResource[resource.href]?.takeIf { it.isNotEmpty() }
-                    ?: return@launch
 
-            val positionIndex = ceil(progression * (positions.size - 1)).toInt()
-            if (!positions.indices.contains(positionIndex)) {
-                return@launch
+            val positionLocator = publication.positionsByResource[resource.href]?.let { positions ->
+                val index = ceil(progression * (positions.size - 1)).toInt()
+                positions.getOrNull(index)
             }
 
-            val locator = positions[positionIndex]
-                    .copy(title = tableOfContentsTitleByHref[resource.href])
-                    .copyWithLocations(progression = progression)
+            val currentLocator = Locator(
+                href = resource.href,
+                type = resource.type ?: MediaType.XHTML.toString(),
+                title = tableOfContentsTitleByHref[resource.href] ?: positionLocator?.title ?: resource.title,
+                locations = (positionLocator?.locations ?: Locator.Locations()).copy(
+                    progression = progression
+                ),
+                text = positionLocator?.text ?: Locator.Text()
+            )
 
-            _currentLocator.value = locator
+            _currentLocator.value = currentLocator
 
             // Deprecated notifications
-
-            navigatorDelegate?.locationDidChange(navigator = navigator, locator = locator)
+            navigatorDelegate?.locationDidChange(navigator = navigator, locator = currentLocator)
             paginationListener?.onPageChanged(
                 pageIndex = webView.mCurItem,
                 totalPages = webView.numPages,
-                locator = locator
+                locator = currentLocator
             )
         }
     }
