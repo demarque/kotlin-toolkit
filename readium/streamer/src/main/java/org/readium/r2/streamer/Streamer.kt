@@ -9,12 +9,14 @@
 
 package org.readium.r2.streamer
 
+import android.content.ComponentCallbacks2
 import android.content.Context
 import org.readium.r2.shared.PdfSupport
 import org.readium.r2.shared.fetcher.Fetcher
 import org.readium.r2.shared.publication.ContentProtection
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.asset.PublicationAsset
+import org.readium.r2.shared.util.MemoryObserver
 import org.readium.r2.shared.util.Try
 import org.readium.r2.shared.util.archive.ArchiveFactory
 import org.readium.r2.shared.util.archive.DefaultArchiveFactory
@@ -28,7 +30,6 @@ import org.readium.r2.streamer.parser.epub.EpubParser
 import org.readium.r2.streamer.parser.epub.setLayoutStyle
 import org.readium.r2.streamer.parser.image.ImageParser
 import org.readium.r2.streamer.parser.pdf.PdfParser
-import org.readium.r2.streamer.parser.pdf.PdfiumPdfDocumentFactory
 import org.readium.r2.streamer.parser.readium.ReadiumWebPubParser
 
 internal typealias PublicationTry<SuccessT> = Try<SuccessT, Publication.OpeningException>
@@ -57,10 +58,11 @@ class Streamer constructor(
     ignoreDefaultParsers: Boolean = false,
     contentProtections: List<ContentProtection> = emptyList(),
     private val archiveFactory: ArchiveFactory = DefaultArchiveFactory(),
-    private val pdfFactory: PdfDocumentFactory = DefaultPdfDocumentFactory(context),
+    private val pdfFactory: PdfDocumentFactory<*>? = null,
     private val httpClient: DefaultHttpClient = DefaultHttpClient(),
     private val onCreatePublication: Publication.Builder.() -> Unit = {}
 ) {
+    private val context = context.applicationContext
 
     private val contentProtections: List<ContentProtection> =
         contentProtections + listOf(FallbackContentProtection())
@@ -141,6 +143,8 @@ class Streamer constructor(
             .build()
             .apply { addLegacyProperties(asset.mediaType()) }
 
+        context.registerComponentCallbacks(MemoryObserver.asComponentCallbacks2(publication))
+
         Try.success(publication)
 
     } catch (e: Publication.OpeningException) {
@@ -148,9 +152,9 @@ class Streamer constructor(
     }
 
     private val defaultParsers: List<PublicationParser> by lazy {
-        listOf(
+        listOfNotNull(
             EpubParser(),
-            PdfParser(context, pdfFactory),
+            pdfFactory?.let { PdfParser(context, it) },
             ReadiumWebPubParser(pdfFactory, httpClient),
             ImageParser(),
             AudioParser()
@@ -185,14 +189,3 @@ internal fun MediaType?.toPublicationType(): Publication.TYPE =
         MediaType.EPUB -> Publication.TYPE.EPUB
         else -> Publication.TYPE.WEBPUB
     }
-
-@PdfSupport
-class DefaultPdfDocumentFactory private constructor (
-    private val factory: PdfDocumentFactory
-) : PdfDocumentFactory by factory {
-
-    /** Pdfium is the default implementation. */
-    constructor(context: Context)
-        : this(PdfiumPdfDocumentFactory(context.applicationContext))
-
-}
