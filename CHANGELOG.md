@@ -34,18 +34,26 @@ All notable changes to this project will be documented in this file. Take a look
         ```kotlin
         val result = navigator.evaluateJavascript("customInterface.api('argument')")
         ```
+* New [PSPDFKit](readium/adapters/pspdfkit) adapter for rendering PDF documents.
 
 ### Changed
 
 #### Shared
 
 * `TransformingResource` now caches its content by default, as it is the correct behavior in most cases. Set `cacheBytes = false` explicitly to revert to the previous behavior.
+* The previous PDF navigator was extracted in its own package to support third-party PDF engines. **This is a breaking change** if your app supported PDF, take a look at [the migration guide](docs/migration-guide.md).
 
 ### Fixed
 
 #### Streamer
 
 * Fixed parsing the table of contents of an EPUB 3 using NCX instead of a Navigation Document.
+
+#### Navigator
+
+* [swift-toolkit#61](https://github.com/readium/swift-toolkit/issues/61) Fixed serving EPUB resources when the HREF contains an anchor or query parameters.
+* Fixed emitting `currentLocator` with fixed layout EPUBs.
+* Prevent refreshing an already loaded EPUB resource when jumping to a `Locator` in it.
 
 
 ## [2.2.0]
