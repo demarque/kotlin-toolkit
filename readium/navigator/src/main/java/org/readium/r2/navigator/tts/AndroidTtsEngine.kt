@@ -145,7 +145,9 @@ class AndroidTtsEngine(
         override fun onInit(status: Int) {
             if (status == TextToSpeech.SUCCESS) {
                 scope.launch {
-                    availableVoices = engine.voices.map { it.toVoice() }
+                    availableVoices = engine.voices
+                        ?.map { it.toVoice() }
+                        ?: emptyList()
                     init.complete(Unit)
                 }
             } else {
