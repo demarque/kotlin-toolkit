@@ -10,9 +10,8 @@ import android.net.Uri
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import org.readium.r2.navigator.settings.FontFamily
+import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
-import org.readium.r2.shared.publication.ReadingProgression
 
 @ExperimentalReadiumApi
 internal data class ReadiumCss(
@@ -83,29 +82,22 @@ internal data class ReadiumCss(
         val assetsBaseHref = assetsBaseHref.removeSuffix("/")
 
         buildList {
-            val googleFonts = mutableListOf<FontFamily>()
+            val googleFonts = mutableListOf<GoogleFont>()
 
             for (declaration in fontFamilies) {
-                when (val source = declaration.source) {
-                    // No-op, shipped with Android.
-                    FontFamilySource.System -> {}
-
-                    // No-op, already declared in Readium CSS stylesheets.
-                    FontFamilySource.ReadiumCss -> {}
-
-                    FontFamilySource.GoogleFonts -> {
-                        googleFonts.add(declaration.fontFamily)
+                when (declaration) {
+                    is GoogleFont -> {
+                        googleFonts.add(declaration)
                     }
-
-                    is FontFamilySource.Assets -> {
-                        val href = assetsBaseHref + "/" + source.path.removePrefix("/")
+                    is FontAsset -> {
+                        val href = assetsBaseHref + "/" + declaration.path.removePrefix("/")
                         add("""@font-face { font-family: "${declaration.fontFamily.name}"; src: url("$href"); }""")
                     }
                 }
             }
 
             if (googleFonts.isNotEmpty()) {
-                val families = googleFonts.joinToString("|") { it.name }
+                val families = googleFonts.joinToString("|") { it.fontFamily.name }
 
                 val uri = Uri.parse("https://fonts.googleapis.com/css")
                     .buildUpon()

@@ -9,7 +9,6 @@
 package org.readium.r2.testapp.reader
 
 import android.graphics.Color
-import android.os.Bundle
 import androidx.annotation.ColorInt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,8 +17,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.readium.adapters.pspdfkit.navigator.PsPdfKitPreferences
+import org.readium.adapters.pspdfkit.navigator.PsPdfKitPreferencesEditor
+import org.readium.adapters.pspdfkit.navigator.PsPdfKitSettings
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.ExperimentalDecorator
+import org.readium.r2.navigator.pdf.PdfEngineProvider
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.Search
 import org.readium.r2.shared.UserException
@@ -33,7 +36,7 @@ import org.readium.r2.shared.util.Try
 import org.readium.r2.testapp.Application
 import org.readium.r2.testapp.bookshelf.BookRepository
 import org.readium.r2.testapp.domain.model.Highlight
-import org.readium.r2.testapp.reader.settings.UserSettingsViewModel
+import org.readium.r2.testapp.reader.preferences.UserPreferencesViewModel
 import org.readium.r2.testapp.reader.tts.TtsViewModel
 import org.readium.r2.testapp.search.SearchPagingSource
 import org.readium.r2.testapp.utils.EventChannel
@@ -64,11 +67,9 @@ class ReaderViewModel(
         scope = viewModelScope
     )
 
-    val settings: UserSettingsViewModel = UserSettingsViewModel(
-        application = application,
-        bookId = readerInitData.bookId,
-        kind = readerInitData.navigatorKind,
-        scope = viewModelScope
+    val settings: UserPreferencesViewModel<*, *, *>? = UserPreferencesViewModel(
+        viewModelScope = viewModelScope,
+        readerInitData = readerInitData
     )
 
     override fun onCleared() {
