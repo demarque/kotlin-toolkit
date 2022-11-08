@@ -6,8 +6,8 @@
 
 plugins {
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-parcelize")
+    kotlin("android")
+    kotlin("plugin.parcelize")
     id("maven-publish")
     id("org.jetbrains.dokka")
 }
@@ -15,11 +15,11 @@ plugins {
 android {
     resourcePrefix = "readium_"
 
-    compileSdk = 32
+    compileSdk = 33
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 32
+        targetSdk = 33
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -39,23 +39,25 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android.txt"))
         }
     }
+    namespace = "org.readium.adapters.pspdfkit"
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.github.readium"
+            artifactId = "readium-adapter-pspdfkit"
+            artifact(tasks.findByName("sourcesJar"))
+            artifact(tasks.findByName("javadocsJar"))
+
+            afterEvaluate {
                 from(components.getByName("release"))
-                groupId = "com.github.readium"
-                artifactId = "readium-adapter-pspdfkit"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
             }
         }
     }
 }
 
 dependencies {
-    api(project(":readium:adapters:pspdfkit:pspdfkit-document"))
-    api(project(":readium:adapters:pspdfkit:pspdfkit-navigator"))
+    api(project(":readium:adapters:pspdfkit:readium-adapter-pspdfkit-document"))
+    api(project(":readium:adapters:pspdfkit:readium-adapter-pspdfkit-navigator"))
 }

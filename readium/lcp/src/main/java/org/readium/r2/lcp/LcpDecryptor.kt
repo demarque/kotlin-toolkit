@@ -12,13 +12,7 @@ package org.readium.r2.lcp
 import org.readium.r2.shared.extensions.coerceFirstNonNegative
 import org.readium.r2.shared.extensions.inflate
 import org.readium.r2.shared.extensions.requireLengthFitInt
-import org.readium.r2.shared.fetcher.TransformingResource
-import org.readium.r2.shared.fetcher.FailureResource
-import org.readium.r2.shared.fetcher.Resource
-import org.readium.r2.shared.fetcher.ResourceTry
-import org.readium.r2.shared.fetcher.LazyResource
-import org.readium.r2.shared.fetcher.flatMapCatching
-import org.readium.r2.shared.fetcher.mapCatching
+import org.readium.r2.shared.fetcher.*
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.encryption.encryption
 import org.readium.r2.shared.util.Try
@@ -35,7 +29,7 @@ internal class LcpDecryptor(val license: LcpLicense?) {
         // and the DRM license are the same.
         val link = resource.link()
         val encryption = link.properties.encryption
-            if (encryption == null || encryption.scheme != "http://readium.org/2014/01/lcp")
+        if (encryption == null || encryption.scheme != "http://readium.org/2014/01/lcp")
             return@LazyResource resource
 
         when {

@@ -6,8 +6,8 @@
 
 plugins {
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-parcelize")
+    kotlin("android")
+    kotlin("plugin.parcelize")
     id("maven-publish")
     id("org.jetbrains.dokka")
 }
@@ -15,11 +15,11 @@ plugins {
 android {
     resourcePrefix = "readium_"
 
-    compileSdk = 32
+    compileSdk = 33
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 32
+        targetSdk = 33
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -42,17 +42,19 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    namespace = "org.readium.adapters.pspdfkit.navigator"
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.github.readium"
+            artifactId = "readium-adapter-pspdfkit-navigator"
+            artifact(tasks.findByName("sourcesJar"))
+            artifact(tasks.findByName("javadocsJar"))
+
+            afterEvaluate {
                 from(components.getByName("release"))
-                groupId = "com.github.readium"
-                artifactId = "readium-adapter-pspdfkit-navigator"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
             }
         }
     }
@@ -61,18 +63,17 @@ afterEvaluate {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
-    api(project(":readium:shared"))
-    api(project(":readium:navigator"))
-    api(project(":readium:adapters:pspdfkit:pspdfkit-document"))
+    api(project(":readium:readium-shared"))
+    api(project(":readium:readium-navigator"))
+    api(project(":readium:adapters:pspdfkit:readium-adapter-pspdfkit-document"))
 
-    implementation("androidx.fragment:fragment-ktx:1.4.1")
-    implementation("com.jakewharton.timber:timber:5.0.1")
-    implementation("com.pspdfkit:pspdfkit:8.2.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.timber)
+    implementation(libs.pspdfkit)
+    implementation(libs.bundles.coroutines)
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
 
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    androidTestImplementation(libs.androidx.ext.junit)
+    androidTestImplementation(libs.androidx.expresso.core)
 }
