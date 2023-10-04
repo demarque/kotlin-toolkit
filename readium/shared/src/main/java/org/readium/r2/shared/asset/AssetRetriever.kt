@@ -23,7 +23,6 @@ import org.readium.r2.shared.resource.Resource
 import org.readium.r2.shared.resource.ResourceFactory
 import org.readium.r2.shared.resource.ResourceMediaTypeSnifferContent
 import org.readium.r2.shared.util.AbsoluteUrl
-import org.readium.r2.shared.util.BaseError
 import org.readium.r2.shared.util.Either
 import org.readium.r2.shared.util.Error as SharedError
 import org.readium.r2.shared.util.ThrowableError
@@ -61,7 +60,10 @@ public class AssetRetriever(
         }
     }
 
-    public sealed class Error(message: String, cause: SharedError?) : BaseError(message, cause) {
+    public sealed class Error(
+        override val message: String,
+        override val cause: SharedError?
+    ) : SharedError {
 
         public class SchemeNotSupported(
             public val scheme: Url.Scheme,
