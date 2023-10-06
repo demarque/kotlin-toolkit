@@ -27,6 +27,7 @@ import org.readium.r2.shared.util.mediatype.FormatRegistry
 import org.readium.r2.shared.util.mediatype.MediaType
 import org.readium.r2.shared.util.mediatype.MediaTypeRetriever
 import org.readium.r2.streamer.parser.PublicationParser
+import timber.log.Timber
 
 internal class ParserAssetFactory(
     private val httpClient: HttpClient,
@@ -76,22 +77,22 @@ internal class ParserAssetFactory(
             }
             .getOrElse { return Try.failure(it) }
 
-        val baseUrl =
-            manifest.linkWithRel("self")?.href?.resolve()
-                ?: return Try.failure(
-                    Publication.OpenError.InvalidAsset("No self link in the manifest.")
+        val baseUrl = manifest.linkWithRel("self")?.href?.resolve()
+        if (baseUrl == null) {
+            Timber.w("No self link found in the manifest at ${asset.resource.source}")
+        } else {
+            if (baseUrl !is AbsoluteUrl) {
+                return Try.failure(
+                    Publication.OpenError.InvalidAsset("Self link is not absolute.")
                 )
-
-        if (baseUrl !is AbsoluteUrl) {
-            return Try.failure(
-                Publication.OpenError.InvalidAsset("Self link is not absolute.")
-            )
-        }
-
-        if (!baseUrl.isHttp) {
-            return Try.failure(
-                Publication.OpenError.UnsupportedAsset("Self link doesn't use the HTTP(S) scheme.")
-            )
+            }
+            if (!baseUrl.isHttp) {
+                return Try.failure(
+                    Publication.OpenError.UnsupportedAsset(
+                        "Self link doesn't use the HTTP(S) scheme."
+                    )
+                )
+            }
         }
 
         val container =
