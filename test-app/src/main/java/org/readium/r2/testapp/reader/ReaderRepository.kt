@@ -11,6 +11,9 @@ import android.app.Application
 import androidx.annotation.StringRes
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences as JetpackPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapters.pdfium.navigator.PdfiumEngineProvider
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
@@ -85,6 +88,9 @@ class ReaderRepository(
             }
         }
     }
+
+    private val coroutineScope: CoroutineScope =
+        MainScope()
 
     private val repository: MutableMap<Long, ReaderInitData> =
         mutableMapOf()
@@ -245,19 +251,21 @@ class ReaderRepository(
         return TtsInitData(mediaServiceFacade, navigatorFactory, preferencesManager)
     }
 
-    suspend fun close(bookId: Long) {
-        Timber.v("Closing Publication $bookId.")
-        when (val initData = repository.remove(bookId)) {
-            is MediaReaderInitData -> {
-                mediaServiceFacade.closeSession()
-                initData.publication.close()
-            }
-            is VisualReaderInitData -> {
-                mediaServiceFacade.closeSession()
-                initData.publication.close()
-            }
-            null, is DummyReaderInitData -> {
-                // Do nothing
+    fun close(bookId: Long) {
+        coroutineScope.launch {
+            Timber.v("Closing Publication $bookId.")
+            when (val initData = repository.remove(bookId)) {
+                is MediaReaderInitData -> {
+                    mediaServiceFacade.closeSession()
+                    initData.publication.close()
+                }
+                is VisualReaderInitData -> {
+                    mediaServiceFacade.closeSession()
+                    initData.publication.close()
+                }
+                null, is DummyReaderInitData -> {
+                    // Do nothing
+                }
             }
         }
     }
