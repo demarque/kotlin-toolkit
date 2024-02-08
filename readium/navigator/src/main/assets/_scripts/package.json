@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "approx-string-match": "^1.1.0",
-    "css-selector-generator": "^3.6.0",
+    "css-selector-generator": "^3.6.6",
     "hash.js": "^1.1.7",
     "string.prototype.matchall": "^4.0.5"
   }
